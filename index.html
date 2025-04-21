@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>미술품 등록카드 홀로그램 생성</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      margin: 20px auto; 
+      max-width: 800px;
+      padding: 0 10px;
+    }
+    h1 {
+      text-align: center;
+      color: #5D5CDE;
+    }
+    .upload-section {
+      margin-top: 20px;
+      border: 1px solid #ddd;
+      padding: 20px;
+      border-radius: 8px;
+      background-color: #f9f9f9;
+    }
+    label {
+      display: block;
+      margin: 15px 0 5px 0;
+      font-weight: bold;
+    }
+    input[type="text"], input[type="file"] {
+      margin: 5px 0 15px 0;
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: white;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+    button {
+      display: block;
+      padding: 10px 20px;
+      background-color: #5D5CDE;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 20px 0;
+      width: 100%;
+      font-size: 16px;
+      font-weight: bold;
+    }
+    button:hover {
+      background-color: #4a49b8;
+    }
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    .result {
+      margin-top: 20px;
+      font-weight: bold;
+      font-size: 18px;
+      padding: 15px;
+      border-radius: 4px;
+      text-align: center;
+    }
+    .success {
+      background-color: rgba(76, 175, 80, 0.1);
+      color: #4CAF50;
+    }
+    .warning {
+      background-color: rgba(255, 152, 0, 0.1);
+      color: #FF9800;
+    }
+    .error {
+      background-color: rgba(244, 67, 54, 0.1);
+      color: #F44336;
+    }
+    .preview-container {
+      margin-top: 20px;
+      text-align: center;
+    }
+    .preview-box {
+      display: inline-block;
+      max-width: 100%;
+      text-align: center;
+    }
+    .preview-box img {
+      max-width: 100%;
+      max-height: 300px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-top: 10px;
+    }
+    .upload-status {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 4px;
+      background-color: #f1f1f1;
+      display: none; /* 초기에는 표시하지 않음 */
+    }
+    .metadata-section {
+      background-color: #f0f0f0;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    
+    /* 결과 섹션 스타일 */
+    .result-container {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      background-color: #e3f2fd;
+      text-align: center;
+      display: none;
+    }
+    
+    /* 캔버스 컨테이너 스타일 */
+    #canvasContainer {
+      position: relative;
+      margin: 20px auto;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      overflow: hidden;
+      width: 800px;
+      max-width: 100%;
+    }
+    
+    canvas {
+      display: block;
+      max-width: 100%;
+      margin: 0 auto;
+      cursor: default;
+    }
+    
+    .drag-tip {
+      font-size: 14px;
+      color: #5D5CDE;
+      margin-top: 15px;
+      font-weight: bold;
+      animation: tip-blink 2s ease-in-out infinite;
+    }
+    
+    @keyframes tip-blink {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
+    }
+    
+    .button-container {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .save-local-btn, .save-firebase-btn {
+      display: inline-block;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      width: auto;
+      max-width: 250px;
+      margin: 0;
+    }
+    
+    .save-local-btn {
+      background-color: #4CAF50;
+      color: white;
+    }
+    
+    .save-firebase-btn {
+      background-color: #2196F3;
+      color: white;
+    }
+    
+    .save-local-btn:hover {
+      background-color: #3e8e41;
+    }
+    
+    .save-firebase-btn:hover {
+      background-color: #0b7dda;
+    }
+    
+    .save-local-btn:disabled, .save-firebase-btn:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    
+    .info-message {
+      font-size: 14px;
+      margin: 10px auto;
+      max-width: 80%;
+      color: #666;
+      padding: 10px;
+      background-color: #f5f5f5;
+      border-radius: 4px;
+      text-align: left;
+    }
+    
+    .position-info {
+      margin-top: 15px;
+      padding: 10px;
+      background-color: #e8f5e9;
+      border: 1px solid #c8e6c9;
+      border-radius: 4px;
+      text-align: left;
+      font-size: 14px;
+      color: #2e7d32;
+    }
+    
+    .section-divider {
+      margin: 30px 0;
+      border: none;
+      border-top: 1px dashed #ccc;
+    }
+    
+    .footer {
+      margin-top: 30px;
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+    }
+    
+    .debug-info {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 100px;
+      overflow: auto;
+      display: none;
+    }
+    
+    .save-success {
+      display: none;
+      margin-top: 15px;
+      padding: 10px;
+      background-color: #e8f5e9;
+      border: 1px solid #c8e6c9;
+      border-radius: 4px;
+      text-align: center;
+    }
+    
+    .save-success.visible {
+      display: block;
+      animation: fadeInOut 3s;
+    }
+    
+    @keyframes fadeInOut {
+      0%, 100% { opacity: 0; }
+      20%, 80% { opacity: 1; }
+    }
+    
+    /* 미리보기 및 다운로드 스타일 */
+    .composite-preview {
+      display: none;
+      margin: 20px auto;
+      text-align: center;
+    }
+    
+    .composite-preview img {
+      max-width: 100%;
+      max-height: 400px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin: 10px auto;
+    }
+    
+    .composite-preview.visible {
+      display: block;
+    }
+    
+    /* 결과 이미지 미리보기 */
+    #finalPreview {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      display: none;
+    }
+    
+    #finalPreview img {
+      max-width: 100%;
+      max-height: 300px;
+      margin: 0 auto;
+      display: block;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+    
+    #finalPreview h4 {
+      margin-top: 0;
+      text-align: center;
+      color: #333;
+    }
+    
+    /* 워터마크 옵션 컨트롤 */
+    .watermark-options {
+      margin-top: 15px;
+      padding: 10px;
+      background-color: #f0f8ff;
+      border: 1px solid #b3e0ff;
+      border-radius: 4px;
+    }
+    
+    .watermark-options label {
+      display: inline-block;
+      margin-right: 10px;
+      margin-bottom: 0;
+      font-weight: normal;
+    }
+    
+    .watermark-options input[type="checkbox"] {
+      margin-right: 5px;
+    }
+    
+    /* 모바일 최적화 */
+    @media (max-width: 800px) {
+      #canvasContainer {
+        width: 100%;
+      }
+      
+      .button-container {
+        flex-direction: column;
+      }
+      .save-local-btn, .save-firebase-btn {
+        max-width: 100%;
+      }
+    }
+    
+    /* 파일 구조 안내 스타일 */
+    .file-structure-notice {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #fff3cd;
+      border: 1px solid #ffeeba;
+      border-radius: 4px;
+      font-size: 14px;
+      color: #856404;
+    }
+    
+    .file-structure-notice code {
+      background: #f8f9fa;
+      padding: 2px 4px;
+      border-radius: 3px;
+      font-family: monospace;
+    }
+    
+    /* 크기 조절 핸들 스타일 */
+    .resize-handle {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background-color: #5D5CDE;
+      border: 2px solid white;
+      border-radius: 50%;
+    }
+    
+    /* 크기 정보 스타일 */
+    .size-info {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #e8eaf6;
+      border: 1px solid #c5cae9;
+      border-radius: 4px;
+      text-align: left;
+      font-size: 14px;
+      color: #3f51b5;
+    }
+  </style>
+</head>
+<body>
+  <h1>미술품 등록카드 홀로그램 생성</h1>
+  
+  <div class="upload-section">
+    <div class="metadata-section">
+      <h3>작품 정보</h3>
+      
+      <label for="artistName">작가명:</label>
+      <input type="text" id="artistName" placeholder="예: 김화백">
+      
+      <label for="artworkName">작품명:</label>
+      <input type="text" id="artworkName" placeholder="예: 바다풍경">
+    </div>
+    
+    <p>등록카드 이미지와 홀로그램 이미지를 모두 업로드해주세요.</p>
+    
+    <label for="bgImageInput">등록카드 이미지:</label>
+    <input type="file" id="bgImageInput" accept="image/*">
+    
+    <div class="preview-container">
+      <div class="preview-box">
+        <span>등록카드 미리보기</span>
+        <img id="preview_card_img" src="" alt="등록카드 이미지 미리보기">
+      </div>
+    </div>
+    
+    <label for="overlayImageInput">홀로그램 이미지:</label>
+    <input type="file" id="overlayImageInput" accept="image/*">
+    
+    <div class="preview-container">
+      <div class="preview-box">
+        <span>홀로그램 미리보기</span>
+        <img id="preview_hologram_img" src="" alt="홀로그램 이미지 미리보기">
+      </div>
+    </div>
+    
+    <div class="watermark-options">
+      <input type="checkbox" id="enableWatermark" checked>
+      <label for="enableWatermark">워터마크 적용 ((주)한국미술품등록센터)</label>
+    </div>
+    
+    <button id="generateBtn">홀로그램 생성</button>
+    
+    <!-- 초기에는 보이지 않고 업로드 진행 중에만 표시 -->
+    <div class="upload-status" id="uploadStatus"></div>
+    <div class="debug-info" id="debugInfo"></div>
+  </div>
+  
+  <div class="result" id="result"></div>
+  
+  <!-- 결과 섹션 -->
+  <div class="result-container" id="resultContainer">
+    <h3>홀로그램 생성 결과</h3>
+    
+    <div class="drag-tip">홀로그램을 드래그하여 위치 이동, 모서리를 드래그하여 크기 조절이 가능합니다</div>
+    
+    <div id="canvasContainer">
+      <canvas id="imageCanvas" width="800" height="600"></canvas>
+    </div>
+    
+    <div class="position-info" id="positionInfo">
+      홀로그램 위치: <span id="positionCoords">우측 5%, 상단에서 30%</span>
+    </div>
+    
+    <div class="size-info" id="sizeInfo">
+      홀로그램 크기: <span id="sizeCoords">원본의 35%</span>
+    </div>
+    
+    <!-- 최종 결과 미리보기 -->
+    <div id="finalPreview">
+      <h4>최종 결과 미리보기</h4>
+      <img id="finalPreviewImg" src="" alt="최종 이미지 미리보기">
+    </div>
+    
+    <!-- 버튼 컨테이너 -->
+    <div class="button-container">
+      <button class="save-local-btn" id="saveBtn">이미지로 저장하기</button>
+      <button class="save-firebase-btn" id="saveFirebaseBtn">Firebase에 저장</button>
+    </div>
+    
+    <div class="save-success" id="saveSuccess">
+      <p>✅ 합성 이미지가 성공적으로 생성되었습니다.</p>
+    </div>
+    
+    <div class="info-message" id="saveInfo">
+      홀로그램 위치와 크기를 조정한 후 이미지로 저장하거나 Firebase에 업로드할 수 있습니다.
+    </div>
+  </div>
+  
+  <hr class="section-divider">
+  
+  <div class="footer">
+    <p>© 2024-2025 미술품 등록카드 홀로그램 생성 시스템.</p>
+  </div>
+  
+  <!-- 보이지 않는 캔버스 (최종 이미지 생성용) -->
+  <canvas id="finalCanvas" style="display:none"></canvas>
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/4.12.1/firebase.js"></script>
+  
+  <script>
+    // 전역 변수
+    var firebaseApp = null;
+    
+    // Canvas 관련 변수
+    const bgImageInput = document.getElementById('bgImageInput');
+    const overlayImageInput = document.getElementById('overlayImageInput');
+    const canvas = document.getElementById('imageCanvas');
+    const ctx = canvas.getContext('2d');
+    const finalCanvas = document.getElementById('finalCanvas');
+    const finalCtx = finalCanvas.getContext('2d');
+
+    let bgImage = new Image();
+    let overlayImage = new Image();
+
+    let overlayX = 50;
+    let overlayY = 50;
+    let overlayWidth = 0;
+    let overlayHeight = 0;
+    let overlayScale = 0.35; // 초기 오버레이 크기 비율
+    let originalAspectRatio = 1; // 오버레이 이미지의 원래 종횡비
+    
+    // 등록카드(배경) 이미지 관련 변수
+    let bgRatio = 1;
+    let bgWidth = 0;
+    let bgHeight = 0;
+    let bgX = 0;
+    let bgY = 0;
+    
+    // 테두리 색상 및 크기 설정
+    const borderColors = {
+      outer: '#000000', // 외부 테두리(검정색)
+      middle: '#FFD700', // 중간 테두리(황금색)
+      inner: '#000000'  // 내부 테두리(검정색)
+    };
+    const borderWidths = {
+      outer: 6,  // 외부 테두리 폭
+      middle: 4, // 중간 테두리 폭
+      inner: 2   // 내부 테두리 폭
+    };
+    
+    // 워터마크 설정
+    const watermarkSettings = {
+      text: "(주)한국미술품등록센터",
+      color: "rgba(0, 0, 0, 0.1)",  // 반투명 검은색
+      fontSize: 14,  // 작은 글꼴 크기
+      angle: -30 * Math.PI / 180,  // 30도 기울임
+      space: {
+        x: 120,  // 수평 간격
+        y: 80    // 수직 간격
+      }
+    };
+    
+    // 상호작용 상태 변수
+    let isDragging = false;
+    let isResizing = false;
+    let resizeHandle = ''; // 'nw', 'ne', 'sw', 'se' 중 하나
+    let lastMouseX = 0;
+    let lastMouseY = 0;
+    
+    // 등록카드 이미지 입력 처리
+    bgImageInput.onchange = function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        // 미리보기 표시
+        document.getElementById("preview_card_img").src = evt.target.result;
+        
+        // 배경 이미지 로드
+        bgImage.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    };
+    
+    // 홀로그램 이미지 입력 처리
+    overlayImageInput.onchange = function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        // 미리보기 표시
+        document.getElementById("preview_hologram_img").src = evt.target.result;
+        
+        // 오버레이 이미지 로드
+        overlayImage.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    };
+    
+    // 마우스 커서 변경 함수
+    function updateCanvasCursor(x, y) {
+      const isOverResizeHandle = getResizeHandleAtPosition(x, y);
+      if (isOverResizeHandle) {
+        // 리사이즈 핸들 위에 있을 때 적절한 커서로 변경
+        switch(isOverResizeHandle) {
+          case 'nw':
+          case 'se':
+            canvas.style.cursor = 'nwse-resize';
+            break;
+          case 'ne':
+          case 'sw':
+            canvas.style.cursor = 'nesw-resize';
+            break;
+        }
+      } else if (isPointInsideOverlay(x, y)) {
+        // 오버레이 내부에 있을 때 이동 커서로 변경
+        canvas.style.cursor = 'move';
+      } else {
+        // 그 외의 영역에서는 기본 커서로 변경
+        canvas.style.cursor = 'default';
+      }
+    }
+    
+    // 포인트가 오버레이 내부에 있는지 확인
+    function isPointInsideOverlay(x, y) {
+      return (
+        x >= overlayX && 
+        x <= overlayX + overlayWidth && 
+        y >= overlayY && 
+        y <= overlayY + overlayHeight
+      );
+    }
+    
+    // 포인트가 리사이즈 핸들 위에 있는지 확인
+    function getResizeHandleAtPosition(x, y) {
+      const handleSize = 10; // 핸들 크기
+      const halfHandle = handleSize / 2;
+      
+      // 북서(nw) 핸들
+      if (Math.abs(x - overlayX) <= halfHandle && Math.abs(y - overlayY) <= halfHandle) {
+        return 'nw';
+      }
+      
+      // 북동(ne) 핸들
+      if (Math.abs(x - (overlayX + overlayWidth)) <= halfHandle && Math.abs(y - overlayY) <= halfHandle) {
+        return 'ne';
+      }
+      
+      // 남서(sw) 핸들
+      if (Math.abs(x - overlayX) <= halfHandle && Math.abs(y - (overlayY + overlayHeight)) <= halfHandle) {
+        return 'sw';
+      }
+      
+      // 남동(se) 핸들
+      if (Math.abs(x - (overlayX + overlayWidth)) <= halfHandle && Math.abs(y - (overlayY + overlayHeight)) <= halfHandle) {
+        return 'se';
+      }
+      
+      return null;
+    }
+    
+    // 캔버스 그리기 함수
+    function drawCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // 배경 이미지 그리기 (비율 유지)
+      if (bgImage.complete && bgImage.src) {
+        bgRatio = Math.min(canvas.width / bgImage.width, canvas.height / bgImage.height);
+        bgWidth = bgImage.width * bgRatio;
+        bgHeight = bgImage.height * bgRatio;
+        bgX = (canvas.width - bgWidth) / 2;
+        bgY = (canvas.height - bgHeight) / 2;
+        
+        ctx.drawImage(bgImage, bgX, bgY, bgWidth, bgHeight);
+      }
+      
+      // 오버레이 이미지 그리기 (투명도 제거)
+      if (overlayImage.complete && overlayImage.src) {
+        // 위치가 캔버스 영역 벗어나지 않도록 제한
+        overlayX = Math.min(Math.max(overlayX, bgX), bgX + bgWidth - overlayWidth);
+        overlayY = Math.min(Math.max(overlayY, bgY), bgY + bgHeight - overlayHeight);
+
+        // 투명도 효과 제거 (globalAlpha = 1.0)
+        ctx.globalAlpha = 1.0;
+        ctx.drawImage(overlayImage, overlayX, overlayY, overlayWidth, overlayHeight);
+        
+        // 크기 조절 핸들 그리기
+        drawResizeHandles();
+        
+        // 위치 및 크기 정보 업데이트
+        updatePositionAndSizeInfo();
+      }
+      
+      // 최종 이미지 미리보기 업데이트
+      updateFinalPreview();
+    }
+    
+    // 워터마크 그리기 함수
+    function drawWatermarks(ctx, width, height) {
+      // 워터마크 활성화 상태 확인
+      if (!document.getElementById('enableWatermark').checked) return;
+      
+      const { text, color, fontSize, angle, space } = watermarkSettings;
+      
+      // 워터마크 글꼴 설정
+      ctx.font = `${fontSize}px Arial`;
+      ctx.fillStyle = color;
+      ctx.textAlign = 'center';
+      
+      // 텍스트 크기 측정
+      const textWidth = ctx.measureText(text).width;
+      
+      // 워터마크 그리기
+      for (let x = 0; x < width; x += space.x) {
+        for (let y = 0; y < height; y += space.y) {
+          ctx.save();
+          
+          // 텍스트 중심에서 회전
+          ctx.translate(x, y);
+          ctx.rotate(angle);
+          
+          // 텍스트 그리기
+          ctx.fillText(text, 0, 0);
+          
+          ctx.restore();
+        }
+      }
+    }
+    
+    // 삼중 테두리 그리기 함수 (외부 검정 → 중간 황금 → 내부 검정)
+    function drawTripleBorders(ctx, x, y, width, height) {
+      // 1. 외부 검은색 테두리
+      ctx.lineWidth = borderWidths.outer;
+      ctx.strokeStyle = borderColors.outer;
+      ctx.strokeRect(x, y, width, height);
+      
+      // 2. 중간 황금색 테두리
+      // 검은색 테두리 안쪽에 그리기 위해 위치와 크기 계산
+      const middleOffset = borderWidths.outer / 2;
+      ctx.lineWidth = borderWidths.middle;
+      ctx.strokeStyle = borderColors.middle;
+      ctx.strokeRect(
+        x + middleOffset, 
+        y + middleOffset, 
+        width - middleOffset * 2, 
+        height - middleOffset * 2
+      );
+      
+      // 3. 내부 검은색 테두리 (황금색 테두리 안쪽)
+      // 황금색 테두리 안쪽에 그리기 위해 위치와 크기 계산
+      const innerOffset = middleOffset + borderWidths.middle / 2;
+      ctx.lineWidth = borderWidths.inner;
+      ctx.strokeStyle = borderColors.inner;
+      ctx.strokeRect(
+        x + innerOffset, 
+        y + innerOffset, 
+        width - innerOffset * 2, 
+        height - innerOffset * 2
+      );
+    }
+    
+    // 최종 이미지 미리보기 업데이트
+    function updateFinalPreview() {
+      if (!bgImage.complete || !bgImage.src || !overlayImage.complete || !overlayImage.src) return;
+      
+      // 등록카드 크기로 최종 캔버스 크기 설정
+      finalCanvas.width = bgImage.width;
+      finalCanvas.height = bgImage.height;
+      
+      // 등록카드 이미지 그리기
+      finalCtx.drawImage(bgImage, 0, 0, bgImage.width, bgImage.height);
+      
+      // 워터마크 그리기
+      drawWatermarks(finalCtx, bgImage.width, bgImage.height);
+      
+      // 홀로그램 위치 계산 (원본 등록카드 기준으로 변환)
+      const relX = (overlayX - bgX) / bgRatio;
+      const relY = (overlayY - bgY) / bgRatio;
+      const relWidth = overlayWidth / bgRatio;
+      const relHeight = overlayHeight / bgRatio;
+      
+      // 홀로그램 이미지 그리기 (투명도 제거)
+      finalCtx.globalAlpha = 1.0;
+      finalCtx.drawImage(overlayImage, relX, relY, relWidth, relHeight);
+      
+      // 삼중 테두리 추가 (외부 검정 → 중간 황금 → 내부 검정)
+      drawTripleBorders(finalCtx, 0, 0, bgImage.width, bgImage.height);
+      
+      // 미리보기 이미지 업데이트
+      const previewImg = document.getElementById('finalPreviewImg');
+      previewImg.src = finalCanvas.toDataURL('image/png');
+      
+      // 미리보기 표시
+      document.getElementById('finalPreview').style.display = 'block';
+    }
+    
+    // 크기 조절 핸들 그리기
+    function drawResizeHandles() {
+      const handleSize = 10;
+      const halfHandle = handleSize / 2;
+      
+      // 핸들 스타일 설정
+      ctx.fillStyle = '#5D5CDE';
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 2;
+      
+      // 북서(nw) 핸들
+      ctx.beginPath();
+      ctx.arc(overlayX, overlayY, halfHandle, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      
+      // 북동(ne) 핸들
+      ctx.beginPath();
+      ctx.arc(overlayX + overlayWidth, overlayY, halfHandle, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      
+      // 남서(sw) 핸들
+      ctx.beginPath();
+      ctx.arc(overlayX, overlayY + overlayHeight, halfHandle, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      
+      // 남동(se) 핸들
+      ctx.beginPath();
+      ctx.arc(overlayX + overlayWidth, overlayY + overlayHeight, halfHandle, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+    
+    // 위치 및 크기 정보 업데이트
+    function updatePositionAndSizeInfo() {
+      if (!bgImage.complete || !bgImage.src) return;
+      
+      // 등록카드 기준 상대적 위치 계산
+      const relX = overlayX - bgX;
+      const relY = overlayY - bgY;
+      
+      // 위치 정보 업데이트 (등록카드 기준)
+      const leftPercent = (relX / bgWidth * 100).toFixed(1);
+      const topPercent = (relY / bgHeight * 100).toFixed(1);
+      document.getElementById("positionCoords").innerText = 
+        `좌측에서 ${leftPercent}%, 상단에서 ${topPercent}%`;
+      
+      // 크기 정보 업데이트
+      const originalWidth = overlayImage.width;
+      const sizePercent = (overlayWidth / bgRatio / originalWidth * 100).toFixed(1);
+      document.getElementById("sizeCoords").innerText = 
+        `원본의 ${sizePercent}% (${Math.round(overlayWidth)}x${Math.round(overlayHeight)}px)`;
+    }
+    
+    // 이미지 로드 시 캔버스 업데이트
+    overlayImage.onload = function() {
+      // 이미지 원본 비율 저장
+      originalAspectRatio = overlayImage.height / overlayImage.width;
+      
+      // 초기 크기 계산
+      updateOverlaySize(overlayScale);
+      
+      // 초기 위치 설정 (오른쪽 3시 방향)
+      if (bgImage.complete && bgImage.src) {
+        bgRatio = Math.min(canvas.width / bgImage.width, canvas.height / bgImage.height);
+        bgWidth = bgImage.width * bgRatio;
+        bgHeight = bgImage.height * bgRatio;
+        bgX = (canvas.width - bgWidth) / 2;
+        bgY = (canvas.height - bgHeight) / 2;
+        
+        overlayX = bgX + bgWidth - overlayWidth - (bgWidth * 0.05);
+        overlayY = bgY + bgHeight / 2 - overlayHeight / 2;
+      } else {
+        overlayX = canvas.width - overlayWidth - (canvas.width * 0.05);
+        overlayY = canvas.height / 2 - overlayHeight / 2;
+      }
+      
+      drawCanvas();
+    };
+    
+    // 오버레이 크기 업데이트 함수
+    function updateOverlaySize(scale) {
+      overlayWidth = overlayImage.width * scale;
+      overlayHeight = overlayImage.height * scale;
+      
+      // 최소 크기 제한
+      const minWidth = 50;
+      if (overlayWidth < minWidth) {
+        overlayWidth = minWidth;
+        overlayHeight = minWidth * originalAspectRatio;
+      }
+      
+      // 최대 크기 제한 (등록카드 크기의 80%로 제한)
+      if (bgImage.complete && bgImage.src) {
+        bgRatio = Math.min(canvas.width / bgImage.width, canvas.height / bgImage.height);
+        bgWidth = bgImage.width * bgRatio;
+        const maxWidth = bgWidth * 0.8;
+        if (overlayWidth > maxWidth) {
+          overlayWidth = maxWidth;
+          overlayHeight = maxWidth * originalAspectRatio;
+        }
+      } else {
+        const maxWidth = canvas.width * 0.8;
+        if (overlayWidth > maxWidth) {
+          overlayWidth = maxWidth;
+          overlayHeight = maxWidth * originalAspectRatio;
+        }
+      }
+    }
+    
+    bgImage.onload = function() {
+      // 등록카드 사이즈 계산
+      bgRatio = Math.min(canvas.width / bgImage.width, canvas.height / bgImage.height);
+      bgWidth = bgImage.width * bgRatio;
+      bgHeight = bgImage.height * bgRatio;
+      bgX = (canvas.width - bgWidth) / 2;
+      bgY = (canvas.height - bgHeight) / 2;
+      
+      // 오버레이 이미지가 이미 로드되었다면 위치 조정
+      if (overlayImage.complete && overlayImage.src) {
+        overlayX = bgX + bgWidth - overlayWidth - (bgWidth * 0.05);
+        overlayY = bgY + bgHeight / 2 - overlayHeight / 2;
+      }
+      
+      drawCanvas();
+    };
+    
+    // 워터마크 옵션 변경 시 미리보기 업데이트
+    document.getElementById('enableWatermark').addEventListener('change', function() {
+      if (bgImage.complete && bgImage.src && overlayImage.complete && overlayImage.src) {
+        updateFinalPreview();
+      }
+    });
+    
+    // 캔버스 마우스 이벤트 설정
+    canvas.onmousedown = function(e) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      
+      const x = (e.clientX - rect.left) * scaleX;
+      const y = (e.clientY - rect.top) * scaleY;
+      
+      // 마우스 위치 저장
+      lastMouseX = x;
+      lastMouseY = y;
+      
+      // 리사이즈 핸들 확인
+      const handle = getResizeHandleAtPosition(x, y);
+      if (handle) {
+        isResizing = true;
+        resizeHandle = handle;
+        return;
+      }
+      
+      // 오버레이 영역 확인
+      if (isPointInsideOverlay(x, y)) {
+        isDragging = true;
+      }
+    };
+    
+    canvas.onmousemove = function(e) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      
+      const x = (e.clientX - rect.left) * scaleX;
+      const y = (e.clientY - rect.top) * scaleY;
+      
+      // 커서 스타일 업데이트
+      updateCanvasCursor(x, y);
+      
+      // 리사이징
+      if (isResizing) {
+        const deltaX = x - lastMouseX;
+        const deltaY = y - lastMouseY;
+        
+        switch(resizeHandle) {
+          case 'nw': // 북서
+            // 가로 크기 조절
+            const newWidthNW = overlayWidth - deltaX;
+            const newHeightNW = newWidthNW * originalAspectRatio;
+            
+            if (newWidthNW > 50) { // 최소 크기 제한
+              overlayX += deltaX;
+              overlayWidth = newWidthNW;
+              overlayHeight = newHeightNW;
+              overlayY = overlayY + overlayHeight - newHeightNW;
+            }
+            break;
+            
+          case 'ne': // 북동
+            // 가로 크기 조절
+            const newWidthNE = overlayWidth + deltaX;
+            const newHeightNE = newWidthNE * originalAspectRatio;
+            
+            if (newWidthNE > 50) { // 최소 크기 제한
+              overlayWidth = newWidthNE;
+              overlayHeight = newHeightNE;
+              overlayY = overlayY + overlayHeight - newHeightNE;
+            }
+            break;
+            
+          case 'sw': // 남서
+            // 가로 크기 조절
+            const newWidthSW = overlayWidth - deltaX;
+            const newHeightSW = newWidthSW * originalAspectRatio;
+            
+            if (newWidthSW > 50) { // 최소 크기 제한
+              overlayX += deltaX;
+              overlayWidth = newWidthSW;
+              overlayHeight = newHeightSW;
+            }
+            break;
+            
+          case 'se': // 남동
+            // 가로 크기 조절
+            const newWidthSE = overlayWidth + deltaX;
+            const newHeightSE = newWidthSE * originalAspectRatio;
+            
+            if (newWidthSE > 50) { // 최소 크기 제한
+              overlayWidth = newWidthSE;
+              overlayHeight = newHeightSE;
+            }
+            break;
+        }
+        
+        // 현재 비율 계산
+        overlayScale = overlayWidth / overlayImage.width;
+        
+        lastMouseX = x;
+        lastMouseY = y;
+        drawCanvas();
+        return;
+      }
+      
+      // 드래깅
+      if (isDragging) {
+        // 이동 거리 계산
+        const deltaX = x - lastMouseX;
+        const deltaY = y - lastMouseY;
+        
+        // 오버레이 위치 업데이트
+        overlayX += deltaX;
+        overlayY += deltaY;
+        
+        lastMouseX = x;
+        lastMouseY = y;
+        drawCanvas();
+      }
+    };
+    
+    canvas.onmouseup = function() {
+      isDragging = false;
+      isResizing = false;
+    };
+    
+    canvas.onmouseleave = function() {
+      isDragging = false;
+      isResizing = false;
+    };
+    
+    // 터치 이벤트 설정 (모바일 지원)
+    canvas.ontouchstart = function(e) {
+      e.preventDefault();
+      
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      
+      const touch = e.touches[0];
+      const x = (touch.clientX - rect.left) * scaleX;
+      const y = (touch.clientY - rect.top) * scaleY;
+      
+      // 터치 위치 저장
+      lastMouseX = x;
+      lastMouseY = y;
+      
+      // 리사이즈 핸들 확인
+      const handle = getResizeHandleAtPosition(x, y);
+      if (handle) {
+        isResizing = true;
+        resizeHandle = handle;
+        return;
+      }
+      
+      // 오버레이 영역 확인
+      if (isPointInsideOverlay(x, y)) {
+        isDragging = true;
+      }
+    };
+    
+    canvas.ontouchmove = function(e) {
+      if (isDragging || isResizing) {
+        e.preventDefault();
+        
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        
+        const touch = e.touches[0];
+        const x = (touch.clientX - rect.left) * scaleX;
+        const y = (touch.clientY - rect.top) * scaleY;
+        
+        // 리사이징
+        if (isResizing) {
+          const deltaX = x - lastMouseX;
+          const deltaY = y - lastMouseY;
+          
+          switch(resizeHandle) {
+            case 'nw': // 북서
+              // 가로 크기 조절
+              const newWidthNW = overlayWidth - deltaX;
+              const newHeightNW = newWidthNW * originalAspectRatio;
+              
+              if (newWidthNW > 50) { // 최소 크기 제한
+                overlayX += deltaX;
+                overlayWidth = newWidthNW;
+                overlayHeight = newHeightNW;
+                overlayY = overlayY + overlayHeight - newHeightNW;
+              }
+              break;
+              
+            case 'ne': // 북동
+              // 가로 크기 조절
+              const newWidthNE = overlayWidth + deltaX;
+              const newHeightNE = newWidthNE * originalAspectRatio;
+              
+              if (newWidthNE > 50) { // 최소 크기 제한
+                overlayWidth = newWidthNE;
+                overlayHeight = newHeightNE;
+                overlayY = overlayY + overlayHeight - newHeightNE;
+              }
+              break;
+              
+            case 'sw': // 남서
+              // 가로 크기 조절
+              const newWidthSW = overlayWidth - deltaX;
+              const newHeightSW = newWidthSW * originalAspectRatio;
+              
+              if (newWidthSW > 50) { // 최소 크기 제한
+                overlayX += deltaX;
+                overlayWidth = newWidthSW;
+                overlayHeight = newHeightSW;
+              }
+              break;
+              
+            case 'se': // 남동
+              // 가로 크기 조절
+              const newWidthSE = overlayWidth + deltaX;
+              const newHeightSE = newWidthSE * originalAspectRatio;
+              
+              if (newWidthSE > 50) { // 최소 크기 제한
+                overlayWidth = newWidthSE;
+                overlayHeight = newHeightSE;
+              }
+              break;
+          }
+          
+          // 현재 비율 계산
+          overlayScale = overlayWidth / overlayImage.width;
+          
+        } else if (isDragging) {
+          // 이동 거리 계산
+          const deltaX = x - lastMouseX;
+          const deltaY = y - lastMouseY;
+          
+          // 오버레이 위치 업데이트
+          overlayX += deltaX;
+          overlayY += deltaY;
+        }
+        
+        lastMouseX = x;
+        lastMouseY = y;
+        drawCanvas();
+      }
+    };
+    
+    canvas.ontouchend = function() {
+      isDragging = false;
+      isResizing = false;
+    };
+    
+    // 이미지 저장 함수 - 등록카드 영역만 저장
+    document.getElementById('saveBtn').onclick = function() {
+      try {
+        // 버튼 상태 및 메시지 업데이트
+        const saveBtn = document.getElementById("saveBtn");
+        const saveInfo = document.getElementById("saveInfo");
+        
+        saveBtn.disabled = true;
+        saveInfo.innerText = "이미지를 생성하고 저장 중입니다...";
+        
+        // 최종 이미지가 생성되지 않았다면 생성
+        updateFinalPreview();
+        
+        // 작품 정보 가져오기
+        const artistName = document.getElementById("artistName").value.trim();
+        const artworkName = document.getElementById("artworkName").value.trim();
+        
+        // 파일명 생성
+        const sanitizedArtist = sanitizeFileName(artistName || "unknown");
+        const sanitizedArtwork = sanitizeFileName(artworkName || "artwork");
+        const currentDate = getCurrentDate();
+        const filename = `${sanitizedArtist}_${sanitizedArtwork}_${currentDate}.png`;
+        
+        // 등록카드 영역만 포함한 이미지 URL 생성
+        const imageURL = finalCanvas.toDataURL('image/png');
+        
+        // 다운로드 링크 생성 및 클릭
+        const a = document.createElement('a');
+        a.href = imageURL;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        // 성공 메시지 표시
+        saveInfo.innerText = "이미지가 성공적으로 저장되었습니다!";
+        
+        // 성공 표시 애니메이션
+        const saveSuccess = document.getElementById("saveSuccess");
+        saveSuccess.classList.add("visible");
+        setTimeout(() => {
+          saveSuccess.classList.remove("visible");
+        }, 3000);
+        
+        // 버튼 상태 복원
+        saveBtn.disabled = false;
+        
+      } catch (error) {
+        console.error("이미지 저장 중 오류:", error);
+        document.getElementById("saveInfo").innerText = "이미지 저장 중 오류가 발생했습니다: " + error.message;
+        document.getElementById("saveBtn").disabled = false;
+      }
+    };
+    
+    // Firebase에 이미지 저장 - 등록카드 영역만 저장
+    document.getElementById('saveFirebaseBtn').onclick = function() {
+      try {
+        // UI 업데이트
+        const saveBtn = document.getElementById("saveFirebaseBtn");
+        const saveInfo = document.getElementById("saveInfo");
+        
+        saveBtn.disabled = true;
+        saveBtn.innerText = "Firebase에 저장 중...";
+        saveInfo.innerText = "홀로그램 이미지를 Firebase에 저장 중입니다...";
+        
+        // 최종 이미지가 생성되지 않았다면 생성
+        updateFinalPreview();
+        
+        // 작품 정보 가져오기
+        const artistName = document.getElementById("artistName").value.trim();
+        const artworkName = document.getElementById("artworkName").value.trim();
+        
+        // 날짜 정보 생성
+        const currentDate = getCurrentDate();
+        
+        // 파일명 생성
+        const sanitizedArtist = sanitizeFileName(artistName || "unknown");
+        const sanitizedArtwork = sanitizeFileName(artworkName || "artwork");
+        const filename = `${sanitizedArtist}_${sanitizedArtwork}_${currentDate}.png`;
+        
+        // 등록카드 영역만 포함한 이미지 데이터 URL 생성
+        const dataURL = finalCanvas.toDataURL('image/png');
+        
+        // 데이터 URL을 Blob으로 변환
+        const blob = dataURLtoBlob(dataURL);
+        
+        // Firebase 초기화
+        const app = initializeFirebase();
+        const storage = firebase.storage();
+        
+        // 저장 경로 설정
+        const imagePath = "hologram/" + filename;
+        const imageRef = storage.ref(imagePath);
+        
+        // 이미지 업로드
+        const uploadTask = imageRef.put(blob);
+        
+        uploadTask.on("state_changed",
+          // 진행 상태
+          function(snapshot) {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            saveInfo.innerText = `이미지 저장 중... ${Math.round(progress)}%`;
+          },
+          // 오류
+          function(error) {
+            console.error("이미지 저장 실패:", error);
+            saveInfo.innerText = "이미지 저장 중 오류가 발생했습니다.";
+            saveBtn.disabled = false;
+            saveBtn.innerText = "Firebase에 저장";
+          },
+          // 완료
+          function() {
+            // 성공 메시지 표시
+            saveInfo.innerHTML = `
+              <p>홀로그램 이미지가 Firebase에 성공적으로 저장되었습니다.</p>
+              <p>저장 경로: hologram/${filename}</p>
+            `;
+            
+            // 성공 표시 애니메이션
+            const saveSuccess = document.getElementById("saveSuccess");
+            saveSuccess.classList.add("visible");
+            setTimeout(() => {
+              saveSuccess.classList.remove("visible");
+            }, 3000);
+            
+            // 버튼 상태 복원
+            saveBtn.disabled = false;
+            saveBtn.innerText = "Firebase에 저장";
+            
+            // 디버그 정보에 경로 표시
+            addDebugInfo(`이미지 저장 경로: hologram/${filename}`);
+          }
+        );
+      } catch (error) {
+        console.error("Firebase 저장 처리 중 오류:", error);
+        document.getElementById("saveInfo").innerText = "이미지 저장 처리 중 오류가 발생했습니다.";
+        document.getElementById("saveFirebaseBtn").disabled = false;
+        document.getElementById("saveFirebaseBtn").innerText = "Firebase에 저장";
+      }
+    };
+    
+    // DataURL을 Blob으로 변환하는 함수
+    function dataURLtoBlob(dataURL) {
+      // 데이터 URL에서 base64 부분 추출
+      const parts = dataURL.split(';base64,');
+      const contentType = parts[0].split(':')[1];
+      const raw = window.atob(parts[1]);
+      const rawLength = raw.length;
+      
+      // 바이너리 데이터 배열 생성
+      const uInt8Array = new Uint8Array(rawLength);
+      for (let i = 0; i < rawLength; ++i) {
+        uInt8Array[i] = raw.charCodeAt(i);
+      }
+      
+      return new Blob([uInt8Array], { type: contentType });
+    }
+    
+    // 파일명 정제 함수
+    function sanitizeFileName(name) {
+      if (!name) return "";
+      return name.replace(/[\\/:*?"<>|]/g, "").replace(/\s+/g, "_");
+    }
+    
+    // 현재 날짜를 YYYYMMDD 형식으로 반환하는 함수
+    function getCurrentDate() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = (now.getMonth() + 1).toString().padStart(2, '0');
+      const day = now.getDate().toString().padStart(2, '0');
+      return `${year}${month}${day}`;
+    }
+    
+    // 디버그 정보 추가 함수
+    function addDebugInfo(message) {
+      var debugInfo = document.getElementById("debugInfo");
+      debugInfo.style.display = "block";
+      debugInfo.innerHTML += message + "<br>";
+    }
+    
+    // Firebase 초기화 함수
+    function initializeFirebase() {
+      if (firebaseApp) return firebaseApp;
+      
+      try {
+        firebaseApp = firebase.initializeApp({
+          apiKey: "AIzaSyAlA5LfxLrvBjy6PcUie0VA_cUMDtcQ2KM",
+          authDomain: "artguard-a9de3.firebaseapp.com",
+          projectId: "artguard-a9de3", 
+          storageBucket: "artguard-a9de3.firebasestorage.app"
+        });
+        return firebaseApp;
+      } catch (error) {
+        if (error.code === "app/duplicate-app") {
+          // 이미 초기화된 경우
+          return firebase.app();
+        }
+        throw error;
+      }
+    }
+    
+    // 홀로그램 생성 함수
+    document.getElementById("generateBtn").onclick = function() {
+      // 입력값 가져오기
+      const artistName = document.getElementById("artistName").value.trim();
+      const artworkName = document.getElementById("artworkName").value.trim();
+      
+      // 디버그 정보 초기화
+      document.getElementById("debugInfo").innerHTML = "";
+      
+      // 입력 검증
+      if (!artistName) {
+        document.getElementById("result").innerText = "❗ 작가명을 입력해주세요.";
+        document.getElementById("result").className = "result error";
+        return;
+      }
+      
+      if (!artworkName) {
+        document.getElementById("result").innerText = "❗ 작품명을 입력해주세요.";
+        document.getElementById("result").className = "result error";
+        return;
+      }
+      
+      if (!bgImage.src) {
+        document.getElementById("result").innerText = "❗ 등록카드 이미지를 업로드해주세요.";
+        document.getElementById("result").className = "result error";
+        return;
+      }
+      
+      if (!overlayImage.src) {
+        document.getElementById("result").innerText = "❗ 홀로그램 이미지를 업로드해주세요.";
+        document.getElementById("result").className = "result error";
+        return;
+      }
+      
+      const generateBtn = document.getElementById("generateBtn");
+      const uploadStatus = document.getElementById("uploadStatus");
+      const result = document.getElementById("result");
+      
+      // 처리 시작
+      generateBtn.disabled = true;
+      generateBtn.innerText = "이미지 처리 중...";
+      uploadStatus.style.display = "block";
+      uploadStatus.innerText = "이미지 처리 중...";
+      
+      try {
+        // 초기 크기 및 위치 설정
+        overlayScale = 0.35; // 초기 비율 설정
+        updateOverlaySize(overlayScale);
+        
+        // 등록카드 영역 내에 홀로그램 위치 지정
+        bgRatio = Math.min(canvas.width / bgImage.width, canvas.height / bgImage.height);
+        bgWidth = bgImage.width * bgRatio;
+        bgHeight = bgImage.height * bgRatio;
+        bgX = (canvas.width - bgWidth) / 2;
+        bgY = (canvas.height - bgHeight) / 2;
+        
+        overlayX = bgX + bgWidth - overlayWidth - (bgWidth * 0.05);
+        overlayY = bgY + bgHeight / 2 - overlayHeight / 2;
+        
+        // 캔버스 다시 그리기
+        drawCanvas();
+        
+        // 결과 섹션 표시
+        document.getElementById("resultContainer").style.display = "block";
+        
+        // 성공 메시지
+        result.innerText = "✅ 홀로그램이 성공적으로 생성되었습니다. 위치와 크기를 조정한 후 저장하세요.";
+        result.className = "result success";
+        
+        // 버튼 상태 복원
+        generateBtn.disabled = false;
+        generateBtn.innerText = "홀로그램 생성";
+        uploadStatus.innerText = "처리 완료";
+        
+      } catch (error) {
+        console.error("처리 중 오류:", error);
+        
+        result.innerText = "⚠️ 처리 중 오류가 발생했습니다: " + error.message;
+        result.className = "result warning";
+        
+        // 버튼 상태 복원
+        generateBtn.disabled = false;
+        generateBtn.innerText = "홀로그램 생성";
+        uploadStatus.innerText = "처리 실패";
+      }
+    };
+  </script>
+</body>
+</html>
